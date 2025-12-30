@@ -19,3 +19,8 @@ services:
       - net.ipv6.conf.all.forwarding=1
     networks:
       - traefik_net  # 关键：加入同一个网络
+
+
+networks:
+  traefik_net:
+    external: true  # 关键：声明这是外部已存在的网络
