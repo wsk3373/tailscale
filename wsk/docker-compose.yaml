@@ -1,22 +1,21 @@
 
 services:
-  tailscale-sidecar:  # 新增 sidecar 服务
-    user: $HOME
+  tailscale:
     image: tailscale/tailscale:latest
-    container_name: tailscale-sidecar
+    container_name: tailscale
+    restart: unless-stopped
+    environment:
+      - TS_AUTHKEY=tskey-auth-xxxxxx  # 从Tailscale控制台获取
+      - TS_USERSPACE=false
+      - TS_STATE_DIR=/var/lib/tailscale
+    volumes:
+      - ./tailscale/data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
     cap_add:
       - NET_ADMIN
-      - SYS_MODULE
-    volumes:
-      - $HOME/tailscale-state:/var/lib/tailscale  # 持久化状态
-      - /dev/net/tun:/dev/net/tun
-    environment:
-      - TS_AUTHKEY=tskey-auth-XXXXXXX  # 你的 Headscale/Tailscale auth key
-      - TS_STATE_DIR=/var/lib/tailscale
-      - TS_EXTRA_ARGS=--advertise-tags=tag:container  # 可选标签
-    restart: unless-stopped
-
-networks:
-  default:
-    external: true
-    name: traefik_net  # 保持原网络，但 Traefik 用 sidecar
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+    networks:
+      - traefik_net  # 关键：加入同一个网络
