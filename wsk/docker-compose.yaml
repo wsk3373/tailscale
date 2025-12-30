@@ -1,16 +1,30 @@
-
 services:
   tailscale:
     image: tailscale/tailscale:latest
     container_name: tailscale
     restart: unless-stopped
     environment:
-      - TS_AUTHKEY=tskey-auth-xxxxxx  # 从Tailscale控制台获取
+      # Headscale连接配置
+      - TS_LOGIN_SERVER=https://headscale.grep2000.com  # 或用容器名 headscale:8080
+      - TS_AUTHKEY=aq3ocWT.IJpghwlmGCJ8uKWhbUoZ-aIBv9mOa6ia
+      
+      # 基础配置
       - TS_USERSPACE=false
       - TS_STATE_DIR=/var/lib/tailscale
+      - TS_ACCEPT_DNS=false
+      
+      # 网络配置（简化版）
+      - TS_ADVERTISE_ROUTES=172.19.0.0/16  # 宣告traefik_net网段
+      # - TS_ROUTES=172.19.0.0/16          # 可以注释掉，通常不需要
+      - TS_ACCEPT_ROUTES=true
+      
+      # 可选：自定义节点名
+      - TS_HOSTNAME=vps-tailscale-gateway
+      
     volumes:
       - ./tailscale/data:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
+      - /lib/modules:/lib/modules:ro
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -18,9 +32,8 @@ services:
       - net.ipv4.ip_forward=1
       - net.ipv6.conf.all.forwarding=1
     networks:
-      - traefik_net  # 关键：加入同一个网络
-
+      - traefik_net
 
 networks:
   traefik_net:
-    external: true  # 关键：声明这是外部已存在的网络
+    external: true
